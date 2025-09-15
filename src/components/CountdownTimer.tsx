@@ -29,7 +29,7 @@ const CountdownTimer = () => {
   }, []);
 
   return (
-    <div className="bg-gradient-festival text-white py-4 px-6 rounded-2xl shadow-festival">
+    <div className="bg-gradient-hero text-white py-4 px-6 rounded-2xl shadow-festival">
       <div className="text-center">
         <p className="text-sm font-medium mb-2">🔥 Le festival commence dans :</p>
         <div className="grid grid-cols-4 gap-4 text-center">
