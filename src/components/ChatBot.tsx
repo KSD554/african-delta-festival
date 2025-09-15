@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, X, Send } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -17,28 +19,17 @@ const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: '🎉 Salut ! Je suis l\'assistant du Festival African Delta ! Comment puis-je t\'aider aujourd\'hui ?',
+      text: '🎉 Salut ! Je suis l\'assistant IA du Festival African Delta ! Comment puis-je t\'aider aujourd\'hui ?',
       isUser: false,
       timestamp: new Date()
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const predefinedResponses: Record<string, string> = {
-    'lieu': '📍 Le festival se déroule à l\'Ancien Stade de Bouaké, Côte d\'Ivoire !',
-    'date': '📅 Du 26 au 28 décembre 2025 - 3 jours de pur bonheur !',
-    'programme': '🎵 Programme complet avec artistes locaux et internationaux ! Plus d\'infos bientôt.',
-    'ticket': '🎟️ Les tickets sont GRATUITS ! Inscris-toi avec le formulaire sur cette page.',
-    'contact': '📞 +225 0703728301 ou africandeltafestival@gmail.com',
-    'transport': '🚌 Des navettes seront organisées depuis Abidjan. Détails à venir !',
-    'hébergement': '🏨 Liste d\'hôtels partenaires disponible sur notre page Facebook.',
-    'facebook': '📱 Suis-nous sur facebook.com/african_deltafestival',
-    'artistes': '🎤 Lineup incroyable en préparation ! Annonces officielles sur nos réseaux.',
-    'whatsapp': '💬 Rejoins notre groupe WhatsApp pour les dernières infos ! Lien après inscription.',
-  };
-
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -48,35 +39,48 @@ const ChatBot = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
 
-    // Simuler une réponse du bot
-    setTimeout(() => {
-      let botResponse = '🤔 Je ne suis pas sûr de comprendre. Peux-tu reformuler ta question ?';
-      
-      const lowerInput = inputMessage.toLowerCase();
-      for (const [key, response] of Object.entries(predefinedResponses)) {
-        if (lowerInput.includes(key)) {
-          botResponse = response;
-          break;
-        }
-      }
+    try {
+      // Call the AI chatbot function
+      const { data, error } = await supabase.functions.invoke('chatbot-response', {
+        body: { message: inputMessage }
+      });
 
-      // Toujours pousser vers l'inscription
-      if (!lowerInput.includes('ticket') && !lowerInput.includes('inscri')) {
-        botResponse += '\n\n🎟️ N\'oublie pas de t\'inscrire gratuitement pour ton ticket !';
+      if (error) {
+        throw new Error(error.message);
       }
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: botResponse,
+        text: data.response,
         isUser: false,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, botMessage]);
-    }, 1000);
+    } catch (error: any) {
+      console.error('Chatbot error:', error);
+      
+      // Fallback response
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "🤖 Désolé, je rencontre un problème technique. Réessaie dans quelques secondes ou contacte-nous au +225 0703728301 !",
+        isUser: false,
+        timestamp: new Date()
+      };
 
-    setInputMessage('');
+      setMessages(prev => [...prev, botMessage]);
+      
+      toast({
+        title: "Erreur chatbot",
+        description: "Problème de connexion avec l'assistant IA",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -90,17 +94,18 @@ const ChatBot = () => {
       {/* Bouton flottant */}
       <Button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 rounded-full p-4 bg-gradient-festival hover:scale-110 transition-bounce shadow-glow z-50 ${isOpen ? 'hidden' : 'block'}`}
+        className={`fixed bottom-4 right-4 md:bottom-6 md:right-6 rounded-full p-3 md:p-4 bg-gradient-hero hover:scale-110 transition-bounce shadow-glow z-50 ${isOpen ? 'hidden' : 'block'} text-white`}
+        size="default"
       >
-        <MessageCircle className="w-6 h-6" />
+        <MessageCircle className="w-5 h-5 md:w-6 md:h-6" />
       </Button>
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="fixed bottom-6 right-6 w-80 h-96 z-50 shadow-xl border-2 border-festival-orange/20">
-          <CardHeader className="bg-gradient-festival text-white rounded-t-lg p-4">
+        <Card className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-[calc(100vw-2rem)] max-w-sm md:w-80 h-[70vh] md:h-96 z-50 shadow-xl border-2 border-primary/20">
+          <CardHeader className="bg-gradient-hero text-white rounded-t-lg p-3 md:p-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">🎭 Assistant Festival</CardTitle>
+              <CardTitle className="text-base md:text-lg">🎭 Assistant IA</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
@@ -112,7 +117,7 @@ const ChatBot = () => {
             </div>
           </CardHeader>
           <CardContent className="p-0 flex flex-col h-full">
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-3 md:p-4">
               <div className="space-y-3">
                 {messages.map((message) => (
                   <div
@@ -120,9 +125,9 @@ const ChatBot = () => {
                     className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[80%] p-3 rounded-lg text-sm ${
+                      className={`max-w-[85%] md:max-w-[80%] p-2 md:p-3 rounded-lg text-xs md:text-sm ${
                         message.isUser
-                          ? 'bg-festival-orange text-white'
+                          ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-foreground'
                       }`}
                     >
@@ -130,21 +135,31 @@ const ChatBot = () => {
                     </div>
                   </div>
                 ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted text-foreground p-2 md:p-3 rounded-lg text-xs md:text-sm flex items-center gap-2">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Assistant IA réfléchit...
+                    </div>
+                  </div>
+                )}
               </div>
             </ScrollArea>
-            <div className="p-4 border-t">
+            <div className="p-3 md:p-4 border-t">
               <div className="flex gap-2">
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Pose ta question..."
-                  className="flex-1"
+                  className="flex-1 text-sm"
+                  disabled={isLoading}
                 />
                 <Button
                   onClick={handleSendMessage}
-                  className="bg-festival-orange hover:bg-festival-coral"
+                  className="bg-primary hover:bg-primary/90"
                   size="sm"
+                  disabled={isLoading || !inputMessage.trim()}
                 >
                   <Send className="w-4 h-4" />
                 </Button>

@@ -130,14 +130,14 @@ const RegistrationForm = () => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-festival border-2 border-festival-orange/20">
-      <CardHeader className="text-center bg-gradient-festival text-white rounded-t-lg">
-        <CardTitle className="text-xl font-bold">
+    <Card className="w-full max-w-md mx-auto shadow-festival border-2 border-primary/20">
+      <CardHeader className="text-center bg-gradient-hero text-white rounded-t-lg">
+        <CardTitle className="text-lg md:text-xl font-bold">
           🎟️ Inscription Gratuite
         </CardTitle>
-        <p className="text-sm opacity-90">Obtenez votre ticket maintenant !</p>
+        <p className="text-xs md:text-sm opacity-90">Obtenez votre ticket maintenant !</p>
       </CardHeader>
-      <CardContent className="p-6 space-y-4">
+      <CardContent className="p-4 md:p-6 space-y-4">
         {registrationResult ? (
           <div className="text-center space-y-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -156,9 +156,9 @@ const RegistrationForm = () => {
             
             <Button
               onClick={downloadTicket}
-              className="w-full bg-gradient-cta hover:scale-105 transition-bounce text-white font-bold py-3 text-lg shadow-glow"
+              className="w-full bg-gradient-cta hover:scale-105 transition-bounce text-white font-bold py-2 md:py-3 text-sm md:text-lg shadow-glow"
             >
-              <Download className="w-5 h-5 mr-2" />
+              <Download className="w-4 h-4 md:w-5 md:h-5 mr-2" />
               Télécharger mon ticket
             </Button>
             
