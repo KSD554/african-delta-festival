@@ -1,1 +1,4 @@
 project_id = "cuuclfppxgftyjdwpglv"
+
+[functions.register-participant]
+verify_jwt = false

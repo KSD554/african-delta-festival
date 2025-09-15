@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      participants: {
+        Row: {
+          created_at: string
+          email: string
+          eventbrite_order_id: string | null
+          eventbrite_ticket_id: string | null
+          id: string
+          nom: string
+          status: string | null
+          telephone: string
+          ticket_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          eventbrite_order_id?: string | null
+          eventbrite_ticket_id?: string | null
+          id?: string
+          nom: string
+          status?: string | null
+          telephone: string
+          ticket_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          eventbrite_order_id?: string | null
+          eventbrite_ticket_id?: string | null
+          id?: string
+          nom?: string
+          status?: string | null
+          telephone?: string
+          ticket_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

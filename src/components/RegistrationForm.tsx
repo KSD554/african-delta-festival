@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Download } from 'lucide-react';
 
 const RegistrationForm = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +13,7 @@ const RegistrationForm = () => {
     telephone: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrationResult, setRegistrationResult] = useState<any>(null);
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,17 +28,61 @@ const RegistrationForm = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulation d'inscription (remplacé par l'API Eventbrite + Supabase une fois connecté)
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('register-participant', {
+        body: {
+          nom: formData.nom,
+          email: formData.email,
+          telephone: formData.telephone
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const result = data;
+
+      if (!result.success) {
+        toast({
+          title: "❌ Erreur",
+          description: result.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Inscription réussie
+      setRegistrationResult(result);
       toast({
         title: "🎉 Inscription réussie !",
-        description: `Merci ${formData.nom} ! Votre ticket gratuit vous sera envoyé par email.`,
+        description: `Merci ${formData.nom} ! ${result.message}`,
       });
       
       // Réinitialiser le formulaire
       setFormData({ nom: '', email: '', telephone: '' });
+
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      toast({
+        title: "❌ Erreur",
+        description: error.message || "Une erreur s'est produite lors de l'inscription",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 2000);
+    }
+  };
+
+  const downloadTicket = () => {
+    if (registrationResult?.participant?.ticket_url) {
+      window.open(registrationResult.participant.ticket_url, '_blank');
+    } else {
+      toast({
+        title: "📧 Ticket par email",
+        description: "Votre ticket vous sera envoyé par email sous peu.",
+      });
+    }
   };
 
   return (
@@ -47,58 +94,94 @@ const RegistrationForm = () => {
         <p className="text-sm opacity-90">Obtenez votre ticket maintenant !</p>
       </CardHeader>
       <CardContent className="p-6 space-y-4">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input
-              type="text"
-              name="nom"
-              placeholder="Votre nom complet *"
-              value={formData.nom}
-              onChange={handleInputChange}
-              required
-              className="border-festival-orange/30 focus:border-festival-orange"
-            />
+        {registrationResult ? (
+          <div className="text-center space-y-4">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-green-800 mb-2">
+                ✅ Inscription confirmée !
+              </h3>
+              <p className="text-green-700 mb-4">
+                Bonjour {registrationResult.participant.nom}, votre inscription est confirmée.
+              </p>
+              {registrationResult.participant.eventbrite_ticket_id && (
+                <p className="text-sm text-green-600 mb-4">
+                  ID Ticket: {registrationResult.participant.eventbrite_ticket_id}
+                </p>
+              )}
+            </div>
+            
+            <Button
+              onClick={downloadTicket}
+              className="w-full bg-gradient-cta hover:scale-105 transition-bounce text-white font-bold py-3 text-lg shadow-glow"
+            >
+              <Download className="w-5 h-5 mr-2" />
+              Télécharger mon ticket
+            </Button>
+            
+            <Button
+              onClick={() => setRegistrationResult(null)}
+              variant="outline"
+              className="w-full"
+            >
+              Nouvelle inscription
+            </Button>
           </div>
-          <div>
-            <Input
-              type="email"
-              name="email"
-              placeholder="Votre email *"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-              className="border-festival-orange/30 focus:border-festival-orange"
-            />
-          </div>
-          <div>
-            <Input
-              type="tel"
-              name="telephone"
-              placeholder="Votre téléphone *"
-              value={formData.telephone}
-              onChange={handleInputChange}
-              required
-              className="border-festival-orange/30 focus:border-festival-orange"
-            />
-          </div>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-cta hover:scale-105 transition-bounce text-white font-bold py-3 text-lg shadow-glow"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Inscription en cours...
-              </span>
-            ) : (
-              "🎟 Je m'inscris gratuitement"
-            )}
-          </Button>
-        </form>
-        <p className="text-xs text-muted-foreground text-center">
-          * Tous les champs sont obligatoires
-        </p>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Input
+                  type="text"
+                  name="nom"
+                  placeholder="Votre nom complet *"
+                  value={formData.nom}
+                  onChange={handleInputChange}
+                  required
+                  className="border-festival-orange/30 focus:border-festival-orange"
+                />
+              </div>
+              <div>
+                <Input
+                  type="email"
+                  name="email"
+                  placeholder="Votre email *"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="border-festival-orange/30 focus:border-festival-orange"
+                />
+              </div>
+              <div>
+                <Input
+                  type="tel"
+                  name="telephone"
+                  placeholder="Votre téléphone *"
+                  value={formData.telephone}
+                  onChange={handleInputChange}
+                  required
+                  className="border-festival-orange/30 focus:border-festival-orange"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-cta hover:scale-105 transition-bounce text-white font-bold py-3 text-lg shadow-glow"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Inscription en cours...
+                  </span>
+                ) : (
+                  "🎟 Je m'inscris gratuitement"
+                )}
+              </Button>
+            </form>
+            <p className="text-xs text-muted-foreground text-center">
+              * Tous les champs sont obligatoires
+            </p>
+          </>
+        )}
       </CardContent>
     </Card>
   );
