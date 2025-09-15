@@ -47,6 +47,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        festival: {
+          orange: "hsl(var(--festival-orange))",
+          yellow: "hsl(var(--festival-yellow))",
+          brown: "hsl(var(--festival-brown))",
+          coral: "hsl(var(--festival-coral))",
+          pattern: "hsl(var(--african-pattern))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
