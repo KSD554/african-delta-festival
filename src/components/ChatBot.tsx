@@ -145,19 +145,25 @@ const ChatBot = () => {
                 )}
               </div>
             </ScrollArea>
-            <div className="p-3 md:p-4 border-t">
+            <div className="p-3 md:p-4 border-t bg-background">
               <div className="flex gap-2">
                 <Input
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
                   placeholder="Pose ta question..."
-                  className="flex-1 text-sm"
+                  className="flex-1 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
                   disabled={isLoading}
+                  autoComplete="off"
                 />
                 <Button
                   onClick={handleSendMessage}
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/90 shrink-0"
                   size="sm"
                   disabled={isLoading || !inputMessage.trim()}
                 >

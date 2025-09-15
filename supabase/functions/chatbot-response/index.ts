@@ -19,9 +19,9 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { message }: ChatRequest = await req.json();
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
+    if (!hfToken) {
+      throw new Error('Hugging Face API key not configured');
     }
 
     const systemPrompt = `Tu es l'assistant virtuel du Festival African Delta, un festival culturel gratuit qui se déroule du 26 au 28 décembre 2025 à Bouaké (Côte d'Ivoire).
@@ -44,30 +44,41 @@ INSTRUCTIONS :
 
 Si tu ne connais pas une info spécifique, dis que plus de détails seront annoncés sur Facebook ou par email après inscription.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${hfToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 200,
-        temperature: 0.8
+        inputs: `${systemPrompt}\n\nUtilisateur: ${message}\nAssistant:`,
+        parameters: {
+          max_new_tokens: 200,
+          temperature: 0.8,
+          return_full_text: false
+        }
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      throw new Error(`Hugging Face API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const botResponse = data.choices[0]?.message?.content || 
-      "🤖 Désolé, je rencontre un petit problème technique. Réessaie dans quelques secondes !";
+    let botResponse = "🤖 Désolé, je rencontre un petit problème technique. Réessaie dans quelques secondes !";
+    
+    if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+      botResponse = data[0].generated_text.trim();
+    }
+    
+    // Si la réponse est vide ou trop courte, utiliser une réponse par défaut
+    if (!botResponse || botResponse.length < 10) {
+      botResponse = `🎭 Salut ! Merci de me contacter concernant le Festival African Delta ! 🎉 
+      
+Le festival se déroule du 26 au 28 décembre 2025 à l'Ancien Stade de Bouaké. L'entrée est GRATUITE mais l'inscription est obligatoire ! 
+
+Que puis-je t'aider à savoir sur cet événement culturel exceptionnel ? 🎟️✨`;
+    }
 
     return new Response(
       JSON.stringify({ 
@@ -83,7 +94,7 @@ Si tu ne connais pas une info spécifique, dis que plus de détails seront annon
     console.error('Error in chatbot-response function:', error);
     
     // Fallback response en cas d'erreur
-    const fallbackResponse = "🎭 Salut ! Je suis temporairement indisponible, mais tu peux me poser des questions sur les dates (26-28 déc 2025), le lieu (Bouaké), l'inscription gratuite ou nous contacter au +225 0703728301 ! 🎟️";
+    const fallbackResponse = "🎭 Salut ! Je suis l'assistant du Festival African Delta ! 🎉 Le festival se déroule du 26 au 28 décembre 2025 à Bouaké. L'entrée est gratuite avec inscription obligatoire ! Contacte-nous au +225 0703728301 pour plus d'infos ! 🎟️";
     
     return new Response(
       JSON.stringify({ 
