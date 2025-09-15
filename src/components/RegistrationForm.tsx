@@ -74,13 +74,57 @@ const RegistrationForm = () => {
     }
   };
 
-  const downloadTicket = () => {
-    if (registrationResult?.participant?.ticket_url) {
-      window.open(registrationResult.participant.ticket_url, '_blank');
-    } else {
+  const downloadTicket = async () => {
+    if (!registrationResult?.participant) {
       toast({
-        title: "📧 Ticket par email",
-        description: "Votre ticket vous sera envoyé par email sous peu.",
+        title: "❌ Erreur",
+        description: "Données du participant non disponibles",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Call the ticket PDF generation function
+      const { data, error } = await supabase.functions.invoke('generate-ticket-pdf', {
+        body: {
+          participant: registrationResult.participant
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!data.success) {
+        throw new Error(data.error);
+      }
+
+      // Create and download PDF from HTML
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(data.ticketHTML);
+        printWindow.document.close();
+        
+        // Wait a moment for content to load then print
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 1000);
+        
+        toast({
+          title: "🎟️ Ticket généré",
+          description: `Ticket pour ${data.participantName} prêt à imprimer !`,
+        });
+      } else {
+        throw new Error("Impossible d'ouvrir la fenêtre d'impression");
+      }
+    } catch (error: any) {
+      console.error('Ticket generation error:', error);
+      toast({
+        title: "❌ Erreur",
+        description: error.message || "Erreur lors de la génération du ticket",
+        variant: "destructive"
       });
     }
   };

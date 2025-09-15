@@ -102,7 +102,7 @@ const Index = () => {
       </section>
 
       {/* Section Inscription */}
-      <section id="inscription" className="py-20 bg-gradient-to-br from-white to-festival-yellow/5">
+      <section id="inscription" className="py-20 bg-gradient-to-br from-background to-muted/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold mb-4 text-gradient-festival">
@@ -124,7 +124,7 @@ const Index = () => {
       <SocialProof />
 
       {/* Section Informations */}
-      <section id="infos" className="py-20 bg-gradient-to-br from-festival-coral/5 to-festival-orange/5">
+      <section id="infos" className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <h2 className="text-4xl font-bold text-center mb-12 text-gradient-festival">
             📋 Informations Pratiques
