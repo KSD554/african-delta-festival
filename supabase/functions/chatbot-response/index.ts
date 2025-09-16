@@ -31,21 +31,19 @@ const handler = async (req: Request): Promise<Response> => {
     - Lieu : Ancien Stade de Bouaké, Côte d'Ivoire  
     - Entrée : GRATUITE avec inscription obligatoire
     - Contact : +225 0703728301 ou africandeltafestival@gmail.com
-    - Facebook : https://www.facebook.com/profile.php?id=61573922936413
-    - Instagram : https://www.instagram.com/african_delta_festival/
 
     INSTRUCTIONS :
     - Réponds de manière chaleureuse et enthousiaste avec des émojis
     - Encourage toujours l'inscription gratuite 
     - Utilise un ton amical et accessible
     - Sois informatif sur le programme, la logistique, les artistes
-    - Pousse les gens à suivre les réseaux sociaux pour les mises à jour
+    - Pousse les gens à suivre les réseaux sociaux pour les mises à jour (sans partager d'URL)
     - Réponds en français
     - Garde tes réponses courtes et engageantes (max 100 mots)
 
-    Si tu ne connais pas une info spécifique, dis que plus de détails seront annoncés sur Facebook, Instagram ou par email après inscription.`;
+    Si tu ne connais pas une info spécifique, dis que plus de détails seront annoncés sur nos réseaux sociaux ou par email après inscription.`;
 
-    // Try Hugging Face models with graceful fallback and better logging
+    // Try Hugging Face model with graceful fallback and better logging
     const callHF = async (modelId: string): Promise<string | null> => {
       const res = await fetch(`https://api-inference.huggingface.co/models/${modelId}`, {
         method: 'POST',
@@ -79,15 +77,12 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     let botResponse = await callHF('facebook/blenderbot-400M-distill');
-    if (!botResponse) {
-      botResponse = await callHF('microsoft/DialoGPT-medium');
-    }
 
     if (!botResponse || botResponse.length < 10) {
       const defaults = [
-        `🎭 Salut ! Le Festival African Delta arrive du 26 au 28 déc. 2025 à Bouaké. Entrée GRATUITE avec inscription obligatoire. Suis-nous: Facebook: https://www.facebook.com/profile.php?id=61573922936413 • Instagram: https://www.instagram.com/african_delta_festival/ 🎉`,
-        `✨ Hey ! Hâte de te voir au Festival African Delta (26–28 déc. 2025, Bouaké). Inscription gratuite obligatoire. Infos et actus sur Facebook et Instagram ! 🎟️`,
-        `👋 Bienvenue ! Pose-moi ta question sur le festival. Détails à venir sur nos réseaux: FB https://www.facebook.com/profile.php?id=61573922936413 • IG https://www.instagram.com/african_delta_festival/`
+        `🎭 Salut ! Le Festival African Delta arrive du 26 au 28 déc. 2025 à Bouaké. Entrée GRATUITE avec inscription obligatoire. Pose-moi ta question ! 🎉`,
+        `✨ Hey ! Hâte de te voir au Festival African Delta (26–28 déc. 2025, Bouaké). Inscription gratuite obligatoire. Comment puis-je t'aider ? 🎟️`,
+        `👋 Bienvenue ! Dis-m’en plus sur ce que tu veux savoir (programme, horaires, accès). Je réponds en quelques secondes !`
       ];
       botResponse = defaults[Math.floor(Math.random() * defaults.length)];
     }
@@ -105,8 +100,8 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error('Error in chatbot-response function:', error);
     
-    // Fallback response en cas d'erreur (inclut les liens officiels)
-    const fallbackResponse = "🎭 Oups, petit souci technique. Reviens dans un instant ! En attendant: Festival African Delta (26–28 déc. 2025, Bouaké) • Inscription GRATUITE obligatoire • Facebook: https://www.facebook.com/profile.php?id=61573922936413 • Instagram: https://www.instagram.com/african_delta_festival/ 📣";
+    // Fallback response en cas d'erreur (sans partager d'URLs)
+    const fallbackResponse = "🎭 Oups, petit souci technique. Réessaie dans un instant ! Festival African Delta (26–28 déc. 2025, Bouaké). Inscription GRATUITE obligatoire. 🎟️";
     
     return new Response(
       JSON.stringify({ 
