@@ -45,40 +45,51 @@ const handler = async (req: Request): Promise<Response> => {
 
     Si tu ne connais pas une info spécifique, dis que plus de détails seront annoncés sur Facebook, Instagram ou par email après inscription.`;
 
-    const response = await fetch('https://api-inference.huggingface.co/models/facebook/blenderbot-400M-distill', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${hfToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: `${systemPrompt}\n\nUtilisateur: ${message}\nAssistant:`,
-        parameters: {
-          max_new_tokens: 200,
-          temperature: 0.8,
-          return_full_text: false
-        }
-      }),
-    });
+    // Try Hugging Face models with graceful fallback and better logging
+    const callHF = async (modelId: string): Promise<string | null> => {
+      const res = await fetch(`https://api-inference.huggingface.co/models/${modelId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${hfToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: `${systemPrompt}\n\nUtilisateur: ${message}\nAssistant:`,
+          parameters: {
+            max_new_tokens: 200,
+            temperature: 0.8,
+            return_full_text: false
+          }
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`Hugging Face API error: ${response.status}`);
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.error(`HF error for ${modelId}:`, res.status, body);
+        return null;
+      }
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+        return String(data[0].generated_text).trim();
+      }
+      if (data && typeof data === 'object' && 'generated_text' in data) {
+        return String((data as any).generated_text).trim();
+      }
+      return null;
+    };
+
+    let botResponse = await callHF('facebook/blenderbot-400M-distill');
+    if (!botResponse) {
+      botResponse = await callHF('microsoft/DialoGPT-medium');
     }
 
-    const data = await response.json();
-    let botResponse = "🤖 Désolé, je rencontre un petit problème technique. Réessaie dans quelques secondes !";
-    
-    if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-      botResponse = data[0].generated_text.trim();
-    }
-    
-    // Si la réponse est vide ou trop courte, utiliser une réponse par défaut
     if (!botResponse || botResponse.length < 10) {
-      botResponse = `🎭 Salut ! Merci de me contacter concernant le Festival African Delta ! 🎉 
-      
-Le festival se déroule du 26 au 28 décembre 2025 à l'Ancien Stade de Bouaké. L'entrée est GRATUITE mais l'inscription est obligatoire ! 
-
-Que puis-je t'aider à savoir sur cet événement culturel exceptionnel ? 🎟️✨`;
+      const defaults = [
+        `🎭 Salut ! Le Festival African Delta arrive du 26 au 28 déc. 2025 à Bouaké. Entrée GRATUITE avec inscription obligatoire. Suis-nous: Facebook: https://www.facebook.com/profile.php?id=61573922936413 • Instagram: https://www.instagram.com/african_delta_festival/ 🎉`,
+        `✨ Hey ! Hâte de te voir au Festival African Delta (26–28 déc. 2025, Bouaké). Inscription gratuite obligatoire. Infos et actus sur Facebook et Instagram ! 🎟️`,
+        `👋 Bienvenue ! Pose-moi ta question sur le festival. Détails à venir sur nos réseaux: FB https://www.facebook.com/profile.php?id=61573922936413 • IG https://www.instagram.com/african_delta_festival/`
+      ];
+      botResponse = defaults[Math.floor(Math.random() * defaults.length)];
     }
 
     return new Response(
@@ -94,8 +105,8 @@ Que puis-je t'aider à savoir sur cet événement culturel exceptionnel ? 🎟�
   } catch (error: any) {
     console.error('Error in chatbot-response function:', error);
     
-    // Fallback response en cas d'erreur
-    const fallbackResponse = "🎭 Salut ! Je suis l'assistant du Festival African Delta ! 🎉 Le festival se déroule du 26 au 28 décembre 2025 à Bouaké. L'entrée est gratuite avec inscription obligatoire ! Contacte-nous au +225 0703728301 pour plus d'infos ! 🎟️";
+    // Fallback response en cas d'erreur (inclut les liens officiels)
+    const fallbackResponse = "🎭 Oups, petit souci technique. Reviens dans un instant ! En attendant: Festival African Delta (26–28 déc. 2025, Bouaké) • Inscription GRATUITE obligatoire • Facebook: https://www.facebook.com/profile.php?id=61573922936413 • Instagram: https://www.instagram.com/african_delta_festival/ 📣";
     
     return new Response(
       JSON.stringify({ 
