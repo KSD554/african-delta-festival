@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Download } from 'lucide-react';
 
 const RegistrationForm = () => {
@@ -15,6 +16,7 @@ const RegistrationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrationResult, setRegistrationResult] = useState<any>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -100,24 +102,48 @@ const RegistrationForm = () => {
         throw new Error(data.error);
       }
 
-      // Create and download PDF from HTML
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(data.ticketHTML);
-        printWindow.document.close();
+      if (isMobile) {
+        // Sur mobile, créer un lien de téléchargement direct
+        const blob = new Blob([data.ticketHTML], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
         
-        // Wait a moment for content to load then print
-        setTimeout(() => {
-          printWindow.print();
-          printWindow.close();
-        }, 1000);
+        // Créer un lien de téléchargement temporaire
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ticket-${data.participantName.replace(/\s+/g, '-')}.html`;
+        
+        // Ajouter le lien au DOM, cliquer, puis le supprimer
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Libérer l'URL objet
+        URL.revokeObjectURL(url);
         
         toast({
-          title: "🎟️ Ticket généré",
-          description: `Ticket pour ${data.participantName} prêt à imprimer !`,
+          title: "🎟️ Ticket téléchargé",
+          description: `Ticket pour ${data.participantName} téléchargé !`,
         });
       } else {
-        throw new Error("Impossible d'ouvrir la fenêtre d'impression");
+        // Sur desktop, utiliser la méthode d'impression
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(data.ticketHTML);
+          printWindow.document.close();
+          
+          // Wait a moment for content to load then print
+          setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+          }, 1000);
+          
+          toast({
+            title: "🎟️ Ticket généré",
+            description: `Ticket pour ${data.participantName} prêt à imprimer !`,
+          });
+        } else {
+          throw new Error("Impossible d'ouvrir la fenêtre d'impression");
+        }
       }
     } catch (error: any) {
       console.error('Ticket generation error:', error);
