@@ -98,6 +98,52 @@ const handler = async (req: Request): Promise<Response> => {
                 font-size: 12px;
                 color: #666;
             }
+            
+            /* Styles responsive pour mobile */
+            @media (max-width: 768px) {
+                body {
+                    padding: 10px;
+                }
+                .ticket {
+                    max-width: 100%;
+                    padding: 20px;
+                    margin: 0;
+                }
+                .title {
+                    font-size: 20px;
+                }
+                .subtitle {
+                    font-size: 14px;
+                }
+                .info {
+                    margin: 12px 0;
+                    padding: 12px;
+                }
+                .label, .value {
+                    font-size: 14px;
+                    display: block;
+                    margin: 0;
+                }
+                .value {
+                    margin-top: 5px;
+                    margin-left: 0;
+                }
+                .qr-section {
+                    padding: 15px;
+                    margin: 15px 0;
+                }
+                .ticket-id {
+                    font-size: 12px;
+                    padding: 8px;
+                }
+                .footer {
+                    font-size: 10px;
+                    margin-top: 20px;
+                }
+                .footer p {
+                    margin: 5px 0;
+                }
+            }
         </style>
     </head>
     <body>

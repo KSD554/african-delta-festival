@@ -94,7 +94,7 @@ const ChatBot = () => {
       {/* Bouton flottant */}
       <Button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-4 right-4 md:bottom-6 md:right-6 rounded-full p-3 md:p-4 bg-gradient-hero hover:scale-110 transition-bounce shadow-glow z-50 ${isOpen ? 'hidden' : 'block'} text-white`}
+        className={`fixed bottom-4 left-4 md:bottom-6 md:left-6 rounded-full p-3 md:p-4 bg-gradient-hero hover:scale-110 transition-bounce shadow-glow z-50 ${isOpen ? 'hidden' : 'block'} text-white`}
         size="default"
       >
         <MessageCircle className="w-5 h-5 md:w-6 md:h-6" />
@@ -102,7 +102,7 @@ const ChatBot = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <Card className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-[calc(100vw-2rem)] max-w-sm md:w-80 h-[70vh] md:h-96 z-50 shadow-xl border-2 border-primary/20 flex flex-col">
+        <Card className="fixed bottom-4 left-4 md:bottom-6 md:left-6 w-[calc(100vw-2rem)] max-w-sm md:w-80 h-[70vh] md:h-96 z-50 shadow-xl border-2 border-primary/20 flex flex-col">
           <CardHeader className="bg-gradient-hero text-white rounded-t-lg p-3 md:p-4 flex-shrink-0">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base md:text-lg">🎭 Assistant IA</CardTitle>
