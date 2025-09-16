@@ -19,9 +19,9 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { message }: ChatRequest = await req.json();
 
-    const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
-    if (!hfToken) {
-      throw new Error('Hugging Face API key not configured');
+    const openrouterKey = Deno.env.get('OPENROUTER_API_KEY');
+    if (!openrouterKey) {
+      throw new Error('OpenRouter API key not configured');
     }
 
     const systemPrompt = `Tu es l'assistant virtuel du Festival African Delta, un festival culturel gratuit qui se déroule du 26 au 28 décembre 2025 à Bouaké (Côte d'Ivoire).
@@ -43,40 +43,39 @@ const handler = async (req: Request): Promise<Response> => {
 
     Si tu ne connais pas une info spécifique, dis que plus de détails seront annoncés sur nos réseaux sociaux ou par email après inscription.`;
 
-    // Try Hugging Face model with graceful fallback and better logging
-    const callHF = async (modelId: string): Promise<string | null> => {
-      const res = await fetch(`https://api-inference.huggingface.co/models/${modelId}`, {
+    // Appel OpenRouter pour une réponse fiable
+    const callOpenRouter = async (): Promise<string | null> => {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${hfToken}`,
+          'Authorization': `Bearer ${openrouterKey}`,
           'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://africandelta.lovable.app',
+          'X-Title': 'African Delta Chatbot'
         },
         body: JSON.stringify({
-          inputs: `${systemPrompt}\n\nUtilisateur: ${message}\nAssistant:`,
-          parameters: {
-            max_new_tokens: 200,
-            temperature: 0.8,
-            return_full_text: false
-          }
-        }),
+          model: 'openrouter/auto',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: message }
+          ],
+          max_tokens: 220,
+          temperature: 0.8
+        })
       });
 
       if (!res.ok) {
         const body = await res.text().catch(() => '');
-        console.error(`HF error for ${modelId}:`, res.status, body);
+        console.error('OpenRouter error:', res.status, body);
         return null;
       }
+
       const data = await res.json();
-      if (Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-        return String(data[0].generated_text).trim();
-      }
-      if (data && typeof data === 'object' && 'generated_text' in data) {
-        return String((data as any).generated_text).trim();
-      }
-      return null;
+      const content = data?.choices?.[0]?.message?.content;
+      return content ? String(content).trim() : null;
     };
 
-    let botResponse = await callHF('facebook/blenderbot-400M-distill');
+    let botResponse = await callOpenRouter();
 
     if (!botResponse || botResponse.length < 10) {
       const defaults = [
